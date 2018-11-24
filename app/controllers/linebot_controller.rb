@@ -59,7 +59,7 @@ class LinebotController < ApplicationController
 
     money = @access_token.get("#{API_URL}home/money?#{params_money}")
     @money = JSON.parse(money.body)
-    @amount_sum = @money_today['money'].inject(0) { |result, n| result + n['amount'] }
+    @amount_sum = @money['money'].inject(0) { |result, n| result + n['amount'] }
   end
 
   def answer_from(message)
