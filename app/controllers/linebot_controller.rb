@@ -5,6 +5,8 @@ class LinebotController < ApplicationController
 
   protect_from_forgery :except => [:callback]
 
+  API_URL = 'https://api.zaim.net/v2/'
+
   def callback
     body = request.body.read
 
@@ -42,12 +44,12 @@ class LinebotController < ApplicationController
   end
 
   def total_expense(date)
-    @consumer = OAuth::Consumer.new(CONSUMER_KEY, CONSUMER_SECRET,
+    @consumer = OAuth::Consumer.new(ENV['CONSUMER_KEY'], ENV['CONSUMER_SECRET'],
                                     site: 'https://api.zaim.net',
                                     request_token_path: '/v2/auth/request',
                                     authorize_url: 'https://auth.zaim.net/users/auth',
                                     access_token_path: '/v2/auth/access')
-    @access_token = OAuth::AccessToken.new(@consumer, ACCESS_TOKEN, ACCESS_SECRET)
+    @access_token = OAuth::AccessToken.new(@consumer, ENV['ACCESS_TOKEN'], ENV['ACCESS_SECRET'])
 
     params_money = URI.encode_www_form({
       mode: 'payment',
