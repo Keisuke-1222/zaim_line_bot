@@ -51,6 +51,7 @@ class LinebotController < ApplicationController
 
       answer = "#{period}日間の平均支出は#{total_expense / period}円です"
     elsif message.include?('追加')
+      set_zaim_consumer_and_access_token
       @add_amount = message.delete('^0-9').to_i
       payment = @access_token.post("#{API_URL}home/money/payment?#{payment_params}")
 
