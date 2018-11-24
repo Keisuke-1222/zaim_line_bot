@@ -43,37 +43,50 @@ class LinebotController < ApplicationController
     }
   end
 
-  def total_expense(date)
+  def answer_from(message)
+    if message.include?('平均')
+      period = message.delete('^0-9').to_i
+      @start_date = (Date.today - period + 1).to_s
+      @end_date = Date.today.to_s
+
+      answer = "#{period}日間の平均支出は#{total_expense / period}円です"
+    else
+      case message
+      when '今日', 'today'
+        @start_date = @end_date = Date.today.to_s
+      when '昨日', 'yesterday'
+        @start_date = @end_date = (Date.today - 1).to_s
+      when 'おととい', '一昨日'
+        @start_date = @end_date = (Date.today - 2).to_s
+      else
+        return "error"
+      end
+
+      answer = "#{@start_date}の支出は#{total_expense}円です"
+    end
+  end
+
+  def total_expense
+    set_zaim_consumer_and_access_token
+
+    money = JSON.parse(@access_token.get("#{API_URL}home/money?#{money_params}").body)
+    money['money'].inject(0) { |result, n| result + n['amount'] }
+  end
+
+  def money_params
+    URI.encode_www_form({
+      mode: 'payment',
+      start_date: @start_date,
+      end_date: @end_date,
+    })
+  end
+
+  def set_zaim_consumer_and_access_token
     @consumer = OAuth::Consumer.new(ENV['CONSUMER_KEY'], ENV['CONSUMER_SECRET'],
                                     site: 'https://api.zaim.net',
                                     request_token_path: '/v2/auth/request',
                                     authorize_url: 'https://auth.zaim.net/users/auth',
                                     access_token_path: '/v2/auth/access')
     @access_token = OAuth::AccessToken.new(@consumer, ENV['ACCESS_TOKEN'], ENV['ACCESS_SECRET'])
-
-    params_money = URI.encode_www_form({
-      mode: 'payment',
-      start_date: date,
-      end_date: date,
-    })
-
-    money = @access_token.get("#{API_URL}home/money?#{params_money}")
-    @money = JSON.parse(money.body)
-    @amount_sum = @money['money'].inject(0) { |result, n| result + n['amount'] }
-  end
-
-  def answer_from(message)
-    case message
-    when '今日', 'today'
-      date = Date.today.to_s
-    when '昨日', 'yesterday'
-      date = (Date.today - 1).to_s
-    when 'おととい', '一昨日'
-      dete = (Date.today - 2).to_s
-    else
-      return "error"
-    end
-
-    answer = "#{date}の支出は#{total_expense(date)}円です"
   end
 end
