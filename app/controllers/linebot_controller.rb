@@ -50,16 +50,20 @@ class LinebotController < ApplicationController
       @end_date = Date.today.to_s
 
       answer = "#{period}日間の平均支出は#{total_expense / period}円です"
+    elsif message.include?('追加')
+      @add_amount = message.delete('^0-9').to_i
+      payment = @access_token.post("#{API_URL}home/money/payment?#{payment_params}")
+
+      answer = "#{@add_amount}円を家計簿に追加しました"
     else
-      case message
-      when '今日', 'today'
+      if message.include?('今日')
         @start_date = @end_date = Date.today.to_s
-      when '昨日', 'yesterday'
+      elsif message.include?('昨日')
         @start_date = @end_date = (Date.today - 1).to_s
-      when 'おととい', '一昨日'
+      elsif message.include?('一昨日')
         @start_date = @end_date = (Date.today - 2).to_s
       else
-        return "error"
+        return 'error'
       end
 
       answer = "#{@start_date}の支出は#{total_expense}円です"
@@ -78,6 +82,16 @@ class LinebotController < ApplicationController
       mode: 'payment',
       start_date: @start_date,
       end_date: @end_date,
+    })
+  end
+
+  def payment_params
+    URI.encode_www_form({
+      mapping: 1,
+      category_id: 101,
+      genre_id: 10101,
+      amount: @add_amount,
+      date: Date.today.to_s
     })
   end
 
